@@ -103,9 +103,9 @@ app.post("/login", async (request, response) => {
       const payload = {
         username: username,
       };
-      const generateToken = jwt.sign(payload, "MY_SECRET_TOKEN");
-      response.send({ generateToken });
-      console.log(generateToken);
+      const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+      response.send({ jwtToken });
+      console.log(jwtToken);
     } else {
       response.status(400);
       response.send("Invalid password");
@@ -127,7 +127,7 @@ app.get("/states/", authenticateToken, async (request, response) => {
    SELECT 
    *
    FROM
-   district
+   state
    `;
 
   let store = await db.all(requestQuery);
@@ -268,26 +268,29 @@ app.put(
 
 //8.API
 
-app.get("", authenticateToken, async (request, response) => {
-  const { stateId } = request.prams;
-  const getStateStatsQuery = `
-    SELECT
-    SUM(cases),
-    SUM(curved),
-    SUM(active),
-    SUM(deaths),
-    
-    FROM
-    district
-    WHERE
-     state_id=${stateId};`;
-  const stats = await db.get(getStateStatsQuery);
-  response.send({
-    totalCases: stats["SUM(cases)"],
-    totalCurved: stats["SUM(curved)"],
-    totalActive: stats["SUM(active)"],
-    totalDeaths: stats["SUM(deaths)"],
-  });
-});
+app.get(
+  "/states/:stateId/stats/",
+  authenticateToken,
+  async (request, response) => {
+    let { stateId } = request.params;
+    console.log(stateId);
 
+    let requestQuery = `
+   SELECT 
+   sum(cases) as totalCases,
+   sum(cured) as  totalCured ,
+   sum(active) as totalActive  ,
+   sum(deaths) as totalDeaths
+   FROM
+    district
+   WHERE
+    state_id = ${stateId}
+    ;
+   `;
+    let store = await db.get(requestQuery);
+    console.log(store);
+    //const result = convertObjectSingle(store);
+    response.send(store);
+  }
+);
 module.exports = app;
